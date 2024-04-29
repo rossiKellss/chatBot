@@ -1,8 +1,9 @@
 const bcrypt = require("bcrypt");
 const User = require("../model/user");
+const { createToken } = require("../utils/token-generate");
+
 
 const UserController = {
-
   getUsers: async (req, res) => {
     try {
       const result = await User.find();
@@ -25,9 +26,9 @@ const UserController = {
           email,
           password,
         });
-        console.log("the result is", result);
+        const token = createToken(result._id);
 
-        res.status(200).json({ msg: "User created successfully" });
+        res.cookie("auth_token",token);
       }
     } catch (err) {
       console.log(err.message);
@@ -39,14 +40,27 @@ const UserController = {
       const { email, password } = req.body;
       const userExists = await User.findOne({ email });
       if (!userExists) return res.status(404).json({ msg: "User not found" });
+
       const validatePassword = await bcrypt.compare(
         password,
         userExists.password
       );
-      if (!validatePassword)
+      if (!validatePassword) {
         return res.status(404).json({ msg: "Invalid credentials" });
-
-      res.status(200).json({msg:userExists});
+      }
+      res.clearCookie("auth_token");
+      const token = createToken(userExists._id);
+      
+      const expires = new Date();
+      expires.setDate(expires.getDate() + 7);
+      res.json({auth_token:token})
+      // res.cookie("auth_token", token, {
+      //   path: "/",
+      //   domain: "localhost",
+      //   expires: expires,
+      //   httpOnly: true,
+      //   signed: true,
+      // });
     } catch (err) {
       console.log(err);
     }
