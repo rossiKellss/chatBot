@@ -1,7 +1,7 @@
 const bcrypt = require("bcrypt");
 const User = require("../model/user");
 const { createToken } = require("../utils/token-generate");
-
+const genCookie=require('../utils/cookie');
 
 const UserController = {
   getUsers: async (req, res) => {
@@ -17,18 +17,21 @@ const UserController = {
   signUp: async (req, res) => {
     try {
       const { userName, email, password } = req.body;
-      const userExists = await User.findOne({ userName });
+      const userExists = await User.findOne({$or:[{userName},{email}] });
       if (userExists) {
         res.status(404).json({ msg: "User already exists" });
       } else {
+        
         const result = await User.create({
           userName,
           email,
           password,
         });
-        const token = createToken(result._id);
-
-        res.cookie("auth_token",token);
+        
+       const token = createToken(result._id);
+       const setAuthTokenCookie = genCookie(token);
+       setAuthTokenCookie(req, res);
+       return res.status(200).json({msg:token})
       }
     } catch (err) {
       console.log(err.message);
@@ -50,17 +53,9 @@ const UserController = {
       }
       res.clearCookie("auth_token");
       const token = createToken(userExists._id);
-      
-      const expires = new Date();
-      expires.setDate(expires.getDate() + 7);
-      res.json({auth_token:token})
-      // res.cookie("auth_token", token, {
-      //   path: "/",
-      //   domain: "localhost",
-      //   expires: expires,
-      //   httpOnly: true,
-      //   signed: true,
-      // });
+      const setAuthTokenCookie= genCookie(token);
+      setAuthTokenCookie(req,res);
+      res.json({msg:token});
     } catch (err) {
       console.log(err);
     }
