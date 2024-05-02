@@ -1,17 +1,24 @@
 import { createContext, useEffect, useState, useContext } from "react";
-import { loginUser } from "../helpers/apiCommunicator";
+import { loginUser,checkAuthStatus } from "../helpers/apiCommunicator";
 const AuthContext = createContext(null);
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  useEffect(() => {}, []);
+  useEffect(() => {
+    const checkStatus = async () => {
+      const data=await checkAuthStatus();
+      if (data){
+        setUser({email:data.email,name:data.name})
+      }
+    };
+    checkStatus();
+  }, []);
 
   const Signin = async (email, password) => {
     const data = await loginUser(email, password);
     if (data) {
       setUser({ email: data.email, name: data.name });
       setIsLoggedIn(true);
-      
     }
   };
   const Signup = async (userName, email, password) => {};

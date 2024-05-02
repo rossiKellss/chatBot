@@ -1,4 +1,5 @@
 const jwt=require('jsonwebtoken');
+const { token } = require('morgan');
 
 const createToken=(id)=>{
     const payload={
@@ -11,4 +12,11 @@ const createToken=(id)=>{
 
 }
 
-module.exports={createToken}
+const verifyToken=(token)=>{
+    const result=jwt.verify(token,process.env.JWT_SECRET);
+    return result;
+
+
+}
+
+module.exports={createToken,verifyToken}
