@@ -1,5 +1,5 @@
 import { createContext, useEffect, useState, useContext } from "react";
-import { loginUser,checkAuthStatus } from "../helpers/apiCommunicator";
+import { loginUser,checkAuthStatus ,resigterUser} from "../helpers/apiCommunicator";
 const AuthContext = createContext(null);
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
@@ -21,7 +21,14 @@ export const AuthProvider = ({ children }) => {
       setIsLoggedIn(true);
     }
   };
-  const Signup = async (userName, email, password) => {};
+  const Signup = async (userName, email, password) => {
+    const register = await resigterUser(userName,email,password);
+    if (!register.status==200){
+      throw new Error("Error registering");
+
+    }
+
+  };
   const Logout = async () => {};
 
   const value = {
