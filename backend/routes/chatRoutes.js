@@ -1,29 +1,32 @@
 const { Router } = require("express");
-const { GoogleGenerativeAI } = require("@google/generative-ai");
-const genAI = new GoogleGenerativeAI("AIzaSyA_FM9xOCXqxcv7AUS_yXBA03rXgawZQ58");
+const configGemini = require("../config/configGemini");
 const chatRoutes = Router();
-chatRoutes.get("/text", async (req, res) => {
-    try{
-        const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+const model = configGemini();
+const validateChat = require("../middleware/chatValidator");
+const chatSchema = require("../validationSchema/chatValidation");
+const authorizeUser = require("../middleware/authorizeUser");
+const User = require("../model/user");
 
-        const prompt = "Write a story about a magic backpack.";
-        let text='';
-
-        const result = await model.generateContentStream(prompt);
-        
-       for await(const chunk of result.stream){
-        const chunkText=chunk.text;
-        console.log(chunkText);
-        text+=chunkText;
-       }
-        res.send(text);
-
-    }catch(err){
-        console.log(err);
-
+chatRoutes.post(
+  "/text",
+  validateChat(chatSchema),
+  authorizeUser,
+  async (req, res) => {
+    try {
+      const { prompt } = req.body;
+      const result = await model.generateContent(prompt);
+      const text = await result.response.text();
+      const user = await User.findById(req.user.id);
+      if (!user) return res.status(404).json({ msg: "User not found" });
+      user.chats.push({text:user});
+      console.log(user);
+      // console.log(req.user);
+      console.log(text);
+      res.send(text);
+    } catch (err) {
+      console.log(err);
     }
-    
-
-});
+  }
+);
 
 module.exports = chatRoutes;
